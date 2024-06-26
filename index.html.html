@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Research Layout with Editable Cards</title>
+<style>
+.section {
+  padding: 20px; margin-bottom: 10px; background-color: #f5f5dc;
+}
+.dropzone {
+  width: 1200px; height: 50px;
+  border: 2px dashed #fff; margin: 10px; padding: 10px;
+  display: flex; justify-content: center; align-items: center;
+}
+.card-container, .data-methods-container {
+  display: flex; flex-wrap: wrap;
+}
+.card {
+  margin: 5px; text-align: center; cursor: pointer; position: relative; padding: 10px;
+  display: flex; justify-content: center; align-items: center; flex-direction: column;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+.card.yellow {
+  background-color: #ffffcc; /* 연한 노랑색 */
+}
+.card.red {
+  background-color: #ffcccc; /* 연한 빨강색 */
+}
+.card.blue {
+  background-color: #ccffff; /* 연한 파랑색 */
+}
+.add-button, .edit-button, .delete-button {
+  margin: 5px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer;
+}
+.edit-button, .delete-button {
+  background-color: #f44336;
+}
+.grid, .data-methods-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 두 개의 컬럼 */
+  grid-gap: 10px;
+}
+.data-collection-box {
+  border: 2px solid #666; padding: 10px; margin-bottom: 10px;
+  display: flex;
+  flex-direction: column; /* 박스를 세로로 배치 */
+  align-items: center; /* 가운데 정렬 */
+}
+.data-collection-set {
+  width: 150px; height: 150px; /* 박스 크기 */
+  border: 2px dashed #ccc;
+  position: relative;
+}
+input[type="text"] {
+  width: 90%; /* 텍스트 입력 필드 크기 */
+  padding: 10px; margin: 5px 0; border: 1px solid #ddd;
+}
+button.save-button {
+  display: none; /* 저장 버튼 숨김 */
+}
+button.delete-button {
+  font-size: 15px; /* 작은 삭제 버튼 */
+  background-color: transparent;
+  color: #f44336;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+button.small-delete-button {
+  font-size: 15px; /* 작은 삭제 버튼 */
+  background-color: transparent;
+  color: #f44336;
+  border: none;
+  cursor: pointer;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+.data-method-section .card-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start; /* 카드들을 맨 위에 정렬 */
+}
+.three-sections {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.section-1, .section-2, .section-3 {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+}
+.section-1, .section-2 {
+  width: 25%;
+}
+.section-3 {
+  width: 50%;
+}
+.centered-input {
+  display: flex;
+  justify-content: center;
+}
+.data-method-section {
+  flex: 0 0 30%;
+}
+.data-collection-section {
+  flex: 0 0 70%;
+}
+</style>
+</head>
+<body>
+<div class="section">
+  <h2>Research Topic</h2>
+  <div class="dropzone" id="researchTopicDropzone"></div>
+  <div class="section" id="topicList">
+    <h2>Research Topic List</h2>
+    <div class="card-container" id="topicCards"></div>
+    <button class="add-button" onclick="addEditableCard('topicCards', 800, 50, 'yellow')">카드 추가</button>
+  </div>
+</div>
+
+<div class="three-sections">
+  <div class="section-1">
+    <h3>연구 목적</h3>
+    <div class="centered-input"><input type="text" id="researchPurpose" placeholder="Enter research purpose..."></div>
+  </div>
+  <div class="section-2">
+    <h3>연구 대상</h3>
+    <div class="centered-input"><input type="text" id="researchSubject" placeholder="Enter research subject..."></div>
+  </div>
+  <div class="section-3">
+    <h3>연구 시 고려할 점</h3>
+    <div class="centered-input"><input type="text" id="consideration1" placeholder="Enter consideration 1..."></div>
+    <div class="centered-input"><input type="text" id="consideration2" placeholder="Enter consideration 2..."></div>
+    <div class="centered-input"><input type="text" id="consideration3" placeholder="Enter consideration 3..."></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>데이터 및 수집 방법</h2>
+  <div id="dataCollectionContainer" class="data-methods-container"></div>
+  <button class="add-button" onclick="addDataCollectionSet()">+ Add Collection Set</button>
+</div>
+
+<div class="section data-methods-container">
+  <div class="data-method-section" id="researchMethods">
+    <h2>수집 데이터</h2>
+    <div class="card-container" id="methodCards"></div>
+    <button class="add-button" onclick="addEditableCard('methodCards', 150, 150, 'red')">카드 추가</button>
+  </div>
+  <div class="data-collection-section" id="collectionMethods">
+    <h2>수집 방법</h2>
+    <div class="card-container" id="collectionCards"></div>
+    <button class="add-button" onclick="addEditableCard('collectionCards', 150, 150, 'blue')">카드 추가</button>
+  </div>
+</div>
+
+<script>
+function addTextCard(containerId, width, height, color, text, deletable) {
+  const container = document.getElementById(containerId);
+  const card = document.createElement('div');
+  card.style.width = `${width}px`;
+  card.style.height = `${height}px`;
+  card.className = `card ${color}`;
+  card.textContent = text;
+
+  if (deletable) {
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'X';
+    deleteButton.className = 'small-delete-button';
+    deleteButton.onclick = function() {
+      card.remove();
+    };
+    card.appendChild(deleteButton);
+  }
+
+  card.draggable = true;
+  card.ondragstart = function(event) {
+    event.dataTransfer.setData('text/plain', card.textContent);
+    event.dataTransfer.setData('color', color);
+  };
+
+  container.appendChild(card);
+}
+
+function addDataCollectionSet() {
+  const container = document.getElementById('dataCollectionContainer');
+  const box = document.createElement('div');
+  box.className = 'data-collection-box';
+
+  const dataLabel = document.createElement('div');
+  dataLabel.textContent = '←수집 데이터';
+  dataLabel.style.width = '150px';
+  dataLabel.style.textAlign = 'center';
+
+  const methodLabel = document.createElement('div');
+  methodLabel.textContent = '수집 방법→';
+  methodLabel.style.width = '150px';
+  methodLabel.style.textAlign = 'center';
+
+  const dropZoneContainer = document.createElement('div');
+  dropZoneContainer.style.display = 'flex';
+  dropZoneContainer.style.justifyContent = 'space-between';
+  dropZoneContainer.style.width = '100%';
+
+  const dropZone1 = document.createElement('div');
+  dropZone1.className = 'data-collection-set';
+  dropZone1.ondrop = function(event) {
+    event.preventDefault();
+    const text = event.dataTransfer.getData('text/plain');
+    const color = event.dataTransfer.getData('color');
+    const card = document.createElement('div');
+    card.className = `card ${color}`;
+    card.style.width = 'calc(80%)';
+    card.style.height = 'calc(80%)';
+    card.style.marginTop = '5px';
+    card.style.marginLeft = '5px';
+    card.textContent = text;
+    card.onclick = function() {
+      card.remove();
+    };
+    dropZone1.appendChild(card);
+  };
+  dropZone1.ondragover = function(event) {
+    event.preventDefault();
+  };
+
+  const dropZone2 = document.createElement('div');
+  dropZone2.className = 'data-collection-set';
+  dropZone2.ondrop = function(event) {
+    event.preventDefault();
+    const text = event.dataTransfer.getData('text/plain');
+    const color = event.dataTransfer.getData('color');
+    const card = document.createElement('div');
+    card.className = `card ${color}`;
+    card.style.width = 'calc(80%)';
+    card.style.height = 'calc(80%)';
+    card.style.marginTop = '5px';
+    card.style.marginLeft = '5px';
+    card.textContent = text;
+    card.onclick = function() {
+      card.remove();
+    };
+    dropZone2.appendChild(card);
+  };
+  dropZone2.ondragover = function(event) {
+    event.preventDefault();
+  };
+
+  dropZoneContainer.appendChild(dropZone1);
+  dropZoneContainer.appendChild(dropZone2);
+
+  box.appendChild(dataLabel);
+  box.appendChild(dropZoneContainer);
+  box.appendChild(methodLabel);
+  container.appendChild(box);
+}
+
+function addEditableCard(containerId, width, height, color) {
+  const container = document.getElementById(containerId);
+  const card = document.createElement('div');
+  card.className = `card ${color}`;
+  card.style.width = `${width}px`;
+  card.style.height = `${height}px`;
+
+  const inputText = document.createElement('input');
+  inputText.type = 'text';
+  inputText.placeholder = 'Enter text here...';
+  inputText.style.width = '90%';
+
+  inputText.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      const textDiv = document.createElement('div');
+      textDiv.textContent = inputText.value;
+      textDiv.style.width = '100%';
+      textDiv.style.display = 'flex';
+      textDiv.style.justifyContent = 'center';
+      textDiv.style.alignItems = 'center';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'X';
+      deleteButton.className = 'small-delete-button';
+      deleteButton.onclick = function() {
+        card.remove();
+      };
+
+      card.innerHTML = '';
+      card.appendChild(textDiv);
+      card.appendChild(deleteButton);
+      card.draggable = true;
+      card.ondragstart = function(event) {
+        event.dataTransfer.setData('text/plain', textDiv.textContent);
+        event.dataTransfer.setData('color', color);
+      };
+    }
+  });
+
+  card.appendChild(inputText);
+  container.appendChild(card);
+}
+
+// Drop functionality for research topic dropzone
+document.getElementById('researchTopicDropzone').ondrop = function(event) {
+  event.preventDefault();
+  const text = event.dataTransfer.getData('text/plain');
+  const color = event.dataTransfer.getData('color');
+  const card = document.createElement('div');
+  card.className = `card ${color}`;
+  card.style.width = '1200px';
+  card.style.height = '50px';
+  card.textContent = text;
+  card.onclick = function() {
+    card.remove();
+  };
+  this.appendChild(card);
+};
+document.getElementById('researchTopicDropzone').ondragover = function(event) {
+  event.preventDefault();
+};
+
+// Initialize with pre-filled cards
+window.onload = function() {
+  const topics = [
+    "디지털 교과서 사용과 학생의 개념 이해도 간의 상관관계",
+    "플립 러닝 방식이 학생의 문제 해결 능력에 미치는 영향",
+    "디지털 교육 도구 활용과 학생의 창의적 사고력 개발 간의 관계",
+    "개념 기반 학습 접근법이 학생의 과목별 성취도에 미치는 영향",
+    "온라인 협업 플랫폼 사용과 집단 내 상호작용 향상의 상관성",
+    "디지털 미디어를 통한 교육과 학생의 비판적 사고력 강화의 연관성",
+    "개인화 학습 환경 설정이 학생들의 학업 성과에 미치는 영향",
+    "플립 러닝 모델과 학생들의 자기주도학습능력 강화 사이의 상관관계",
+    "디지털 도구를 활용한 시각적 학습 자료가 학습 효율에 미치는 영향",
+    "개념 기반 교육이 학생들의 주제별 깊이 있는 이해도에 미치는 효과"
+  ];
+  
+  topics.forEach(topic => addTextCard('topicCards', 800, 50, 'yellow', topic, false));
+
+  const methods = [
+    "학생 출석률", "시험 성적", "과제 제출율", "학생 참여도", "학생 간의 상호작용 빈도",
+    "수업 만족도", "학습 태도", "학급 분위기", "상담 요청 횟수", "건강 상태 보고서",
+    "수업 중 질문 횟수", "수업 중 발표 횟수", "수업 준비물 완비율", "교과서와 노트 필기 상태",
+    "학생의 자발적 학습 시간", "교우 관계 만족도", "학생의 수업 집중도", "학생의 과외 활동 참여도",
+    "학부모 면담 요청 횟수", "학생의 감정 상태 (긍정적/부정적)", "학생의 숙제 완성도", "프로젝트 참여도",
+    "학교 행사 참여도", "수업 후 질문 횟수", "수업 중 교사와의 상호작용 횟수", "학생의 독서 시간",
+    "학생의 운동 시간", "교사의 수업 준비 시간", "수업 자료 활용도", "학생의 자기 평가", "그룹 활동 참여도",
+    "학습 목표 달성도", "학습 계획 수립 여부", "수업 중 스마트폰 사용 빈도", "수업 중 집중 방해 요소 발생 빈도",
+    "학생의 스트레스 수준", "학생의 수면 시간", "학교 식사 만족도", "학습 도구 활용도",
+    "수업 중 창의적 아이디어 제시 횟수", "학생의 학습 목표 달성 비율", "학생의 성취 감각", "수업 중 발표 점수",
+    "팀워크 점수", "발표 준비 시간", "학생의 학습 스타일 (시각/청각/운동)", "수업 중 피드백 제공 빈도",
+    "학생의 문제 해결 능력", "수업 중 협력 활동 횟수", "교사의 학습 지원 빈도"
+  ];
+
+  methods.forEach(method => addTextCard('methodCards', 120, 120, 'red', method, false));
+
+  const data = [
+    "설문조사: 특정 주제에 대한 학생, 교사, 학부모의 의견을 수집", "인터뷰: 개별 또는 집단 인터뷰를 통해 심층적인 정보 수집", "관찰: 교실 상황을 직접 관찰하여 비언어적 상호작용, 학습 환경 등을 기록", "집단 토론: 특정 주제에 대한 학생 또는 교사들의 의견을 그룹 토론을 통해 수집", "학습일지: 학생들이 학습 과정에서의 경험, 느낌, 아이디어를 기록", 
+    "포트폴리오 분석: 학생들의 작업물을 모아 학습 성과를 평가", "AI디지털교과서 데이터 분석: AI디지털 교과서가 제공하는 다양한 데이터 활용", "클래스 비디오 녹화: 수업을 비디오로 녹화하여 나중에 분석", 
+     "사례연구: 특정 개인 또는 그룹을 깊이 있게 연구하여 포괄적인 이해", 
+    "종단 연구: 시간이 지남에 따라 같은 집단을 반복적으로 조사하여 변화를 관찰", "문헌 리뷰: 관련 주제에 대한 기존 연구나 문헌을 분석", "역할극: 교육적 상황을 시뮬레이션하여 참가자의 반응을 관찰", "자가 보고 방법: 학생이나 교사가 자신의 행동, 태도, 감정 등을 스스로 평가한 내용 수집", 
+    "학습자 의견 박스: 익명으로 학생들의 의견을 수집", "학부모 인터뷰: 학부모와의 인터뷰를 통해 가정에서의 학습 지원과 태도에 대한 정보를 수집"
+  ];
+
+  data.forEach(d => addTextCard('collectionCards', 150, 150, 'blue', d, false));
+
+  // Add one initial data collection set
+  addDataCollectionSet();
+};
+</script>
+</body>
+</html>
